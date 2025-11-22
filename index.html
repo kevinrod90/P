@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Web App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        table {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        input, button {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Pricing App</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="nav-fmcg" href="#wholesale_fmcg">WHOLESALE-FMCG</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="nav-staple" href="#wholesale_fresh_staple">WHOLESALE-Fresh & Staple</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="nav-prog-fmcg" href="#progressive_pricing_fmcg">PROGRESSIVE PRICING-FMCG</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="nav-pass" href="#pass_moving_items">PASS MOVING ITEMS</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="nav-prog-staple" href="#progressive_pricing_fresh_staple">PROGRESSIVE PRICING-Fresh & Sta</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 id="sheet-title">WHOLESALE-FMCG</h2>
+            <button class="btn btn-success" onclick="toggleUpload()">Upload New Data (CSV)</button>
+        </div>
+
+        <div id="upload-form" style="display: none;" class="card p-3 mb-4">
+            <form>
+                <div class="mb-3">
+                    <input type="file" class="form-control" accept=".csv" id="fileInput">
+                    <small class="form-text text-muted">Upload a tab-separated CSV file.</small>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="handleUpload()">Upload and Update</button>
+            </form>
+        </div>
+
+        <div class="mb-3">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search items..." onkeyup="filterTable()">
+        </div>
+
+        <div id="table-container" class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Security measures to prevent inspection
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            alert('Right-click disabled for security.');
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.key === 'u') || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.shiftKey && e.key === 'J') || (e.ctrlKey && e.shiftKey && e.key === 'C')) {
+                e.preventDefault();
+                alert('Developer tools are disabled.');
+                return false;
+            }
+        });
+
+        document.addEventListener('copy', function(e) {
+            e.preventDefault();
+            alert('Copy is disabled.');
+        });
+
+        setInterval(function() {
+            if (window.outerHeight - window.innerHeight > 200 || window.outerWidth - window.innerWidth > 200) {
+                alert('Developer tools detected. This may violate terms of use.');
+            }
+        }, 1000);
+
+        let currentData = [];
+        let currentHeaders = [];
+        let currentSheet = 'wholesale_fmcg';
+
+        async function loadData(sheet) {
+            currentSheet = sheet;
+            try {
+                const response = await fetch(`data_${sheet}.json`);
+                const data = await response.json();
+                currentHeaders = data.headers;
+                currentData = data.data;
+                renderTable();
+                updateNav(sheet);
+                updateTitle(sheet);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function renderTable() {
+            const container = document.getElementById('table-container');
+            let html = '<div class="table-responsive">';
+            html += '<table class="table table-striped table-bordered">';
+            html += '<thead class="table-dark"><tr>';
+            currentHeaders.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            currentData.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += `<td>${cell}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const rows = document.querySelectorAll('tbody tr');
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                let match = false;
+                cells.forEach(cell => {
+                    const txtValue = cell.textContent || cell.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        match = true;
+                    }
+                });
+                row.style.display = match ? '' : 'none';
+            });
+        }
+
+        function toggleUpload() {
+            const form = document.getElementById('upload-form');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function handleUpload() {
+            alert('File upload not implemented in static version. Please update manually.');
+        }
+
+        function updateNav(activeSheet) {
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${activeSheet.replace('_', '-')}`).classList.add('active');
+        }
+
+        function updateTitle(sheet) {
+            const titles = {
+                'wholesale_fmcg': 'WHOLESALE-FMCG',
+                'wholesale_fresh_staple': 'WHOLESALE-FRESH & STAPLE',
+                'progressive_pricing_fmcg': 'PROGRESSIVE PRICING-FMCG',
+                'pass_moving_items': 'PASS MOVING ITEMS',
+                'progressive_pricing_fresh_staple': 'PROGRESSIVE PRICING-FRESH & STA'
+            };
+            document.getElementById('sheet-title').textContent = titles[sheet] || 'UNKNOWN';
+        }
+
+        // Navigation handlers
+        document.getElementById('nav-fmcg').addEventListener('click', (e) => { e.preventDefault(); loadData('wholesale_fmcg'); });
+        document.getElementById('nav-staple').addEventListener('click', (e) => { e.preventDefault(); loadData('wholesale_fresh_staple'); });
+        document.getElementById('nav-prog-fmcg').addEventListener('click', (e) => { e.preventDefault(); loadData('progressive_pricing_fmcg'); });
+        document.getElementById('nav-pass').addEventListener('click', (e) => { e.preventDefault(); loadData('pass_moving_items'); });
+        document.getElementById('nav-prog-staple').addEventListener('click', (e) => { e.preventDefault(); loadData('progressive_pricing_fresh_staple'); });
+
+        // Load initial data
+        loadData('wholesale_fmcg');
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "framework": null,
+  "installCommand": "echo 'No dependencies'",
+  "buildCommand": "echo 'Static site - no build needed'",
+  "outputDirectory": ".",
+  "redirects": []
+}
